@@ -1,0 +1,79 @@
+#!/bin/bash
+set -e
+
+dieError() {
+    echo $1
+    exit $2
+}
+
+showHelp() {
+    cat <<EOF
+Usage: clag -s <stack-name>  [-pehvV]
+Deploy serverless patch for vapor
+
+-s, -stack,         --stack                 AWS CloudFormation Stack Name.
+-p, -profile,       --profile               AWS Profile Name.
+-e, -env,           --env                   Environment Name.
+-v, -version,       --version               Display Clag Version.
+-h, -help,          --help                  Display Help.
+
+EOF
+}
+
+##########################################################################
+#   Parameters section                                                   #
+##########################################################################
+
+export version="0.1"
+export clag_env_type="0.1"
+export clag_stack_name=""
+
+aws_account_profile="default"
+
+
+# $@ is all command line parameters passed to the script.
+# -o is for short options like -v
+# -l is for long options with double dash like --version
+# the comma separates different long options
+# -a is for long options with single dash like -version
+options=$(getopt -l "help,version,profile:,env:,stack:" -o "hvp:e:s:" -a -- "$@")
+
+# set --:
+# If no arguments follow this option, then the positional parameters are unset. Otherwise, the positional parameters
+# are set to the arguments, even if some of them begin with a ‘-’.
+eval set -- "$options"
+
+while true; do
+    case $1 in
+    -h | --help)
+        showHelp
+        exit 0
+        ;;
+    -p | --profile)
+        shift
+        export aws_account_profile=$1
+        ;;
+    -e | --env)
+        shift
+        export clag_env_type=$1
+        ;;
+    -s | --stack)
+        shift
+        export clag_stack_name=$1
+        ;;
+    -v | --version)
+        echo $version
+        exit 0
+        ;;
+    --)
+        shift
+        break
+        ;;
+    esac
+    shift
+done
+
+if [ -z $clag_stack_name ]; then
+    showHelp
+    exit 0
+fi
